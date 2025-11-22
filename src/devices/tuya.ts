@@ -790,6 +790,17 @@ const tzLocal = {
 };
 
 const fzLocal = {
+    TLSR82xxAction: {
+        cluster: "genOnOff",
+        type: ["attributeReport", "readResponse"],
+        convert: (model, msg, publish, options, meta) => {
+            if (Object.hasOwn(msg.data, "onOff")) {
+                const btn = msg.endpoint.ID;
+                const state = msg.data["onOff"] === 1 ? "on" : "off";
+                return {action: `${state}_${btn}`};
+            }
+        },
+    } satisfies Fz.Converter<"genOnOff", undefined, ["attributeReport", "readResponse"]>,
     // biome-ignore lint/style/useNamingConvention: ignored using `--suppress`
     TS0726_action: {
         cluster: "genOnOff",
@@ -6580,7 +6591,7 @@ export const definitions: DefinitionWithExtend[] = [
             "_TZE200_9xfjixap" /* model: 'ME167', vendor: 'AVATTO' */,
             "_TZE200_jkfbph7l" /* model: 'ME167', vendor: 'AVATTO' */,
             "_TZE200_rxntag7i" /* model: 'ME168', vendor: 'AVATTO' */,
-            "_TZE200_4utwozi2" /* model: 'ME167', vendor: 'MYUET' */,
+            "_TZE200_4utwozi2" /* model: 'ME167', vendor: 'AVATTO' */,
             "_TZE200_yqgbrdyo",
             "_TZE284_p3dbf6qs",
             "_TZE200_rxq4iti9",
@@ -13456,8 +13467,8 @@ export const definitions: DefinitionWithExtend[] = [
             "_TZE204_tdhnhhiy",
         ]),
         model: "TS0601_switch_8",
-        vendor: "Tuya",
-        description: "ZYXH 8 gang switch",
+        vendor: "ZYXH",
+        description: "8 gang switch",
         extend: [tuya.modernExtend.tuyaBase({dp: true})],
         exposes: [
             tuya.exposes.switch().withEndpoint("l1"),
@@ -13580,8 +13591,8 @@ export const definitions: DefinitionWithExtend[] = [
     {
         fingerprint: tuya.fingerprint("TS0601", ["_TZE204_dqolcpcp", "_TZE284_dqolcpcp"]),
         model: "TS0601_switch_12",
-        vendor: "Tuya",
-        description: "ZXYH 12 gang switch",
+        vendor: "ZYXH",
+        description: "12 gang switch",
         extend: [tuya.modernExtend.tuyaBase({dp: true})],
         exposes: [...Array.from({length: 12}, (_, i) => tuya.exposes.switch().withEndpoint(`l${i + 1}`))],
         endpoint: (device) => {
@@ -14225,8 +14236,8 @@ export const definitions: DefinitionWithExtend[] = [
     },
     {
         fingerprint: tuya.fingerprint("TS0601", ["_TZE204_vmcgja59", "_TZE284_vmcgja59"]),
-        model: "ZYXH",
-        vendor: "Tuya",
+        model: "ZYXH_switch_24",
+        vendor: "ZYXH",
         description: "24 gang switch",
         extend: [tuya.modernExtend.tuyaBase({dp: true})],
         exposes: [...Array.from(Array(24).keys()).map((ep) => tuya.exposes.switch().withEndpoint(`l${ep + 1}`))],
@@ -21259,5 +21270,28 @@ export const definitions: DefinitionWithExtend[] = [
             }),
             m.deviceEndpoints({endpoints: {l1: 1, l2: 1, l3: 1, l4: 1}}),
         ],
+    },
+    {
+        fingerprint: [
+            {
+                modelID: "TLSR82xx",
+                manufacturerName: "TELINK",
+                applicationVersion: 0,
+                endpoints: [
+                    {ID: 1, profileID: 260, deviceID: 0, inputClusters: [0, 3, 1, 6], outputClusters: [4, 5, 4096]},
+                    {ID: 2, profileID: 260, deviceID: 0, inputClusters: [0, 3, 6], outputClusters: []},
+                ],
+            },
+        ],
+        model: "TLSR82xx_2btn_remote",
+        vendor: "Telink",
+        description: "2 button remote",
+        fromZigbee: [fzLocal.TLSR82xxAction, fz.battery],
+        toZigbee: [],
+        configure: async (device, coordinatorEndpoint, logger) => {
+            await reporting.bind(device.getEndpoint(1), coordinatorEndpoint, ["genOnOff"]);
+            await reporting.bind(device.getEndpoint(2), coordinatorEndpoint, ["genOnOff"]);
+        },
+        exposes: [e.battery(), e.action(["on_1", "off_1", "on_2", "off_2"])],
     },
 ];
